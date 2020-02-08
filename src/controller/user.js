@@ -1,8 +1,16 @@
+const { dealQuery } = require('../db/mysql')
 const registerCheck = (username, password) =>{
-  if(username === "zhangsan" && password === "123"){
-    return true
-  }
-  return false
+  sql = `select*from users where username='${username}' and password='${password}'`
+  return dealQuery(sql).then(
+    registerResult => {
+      if(!registerResult.length){
+        return false
+      }
+      return true
+
+    }
+  )
+  
 }
 
 module.exports = {

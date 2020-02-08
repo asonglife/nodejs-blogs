@@ -43,6 +43,7 @@ const handleBlogRouter = (req, res) => {
   }
 
   if(method === 'POST'&& req.path === '/api/blog/update'){
+      req.body.author = 'zhangsan'
       let result = updateBlog(req.query.id, req.body)
       return result.then(
         updateResult=>{
@@ -59,14 +60,19 @@ const handleBlogRouter = (req, res) => {
   }
 
   if(method === 'POST'&& req.path === '/api/blog/delete'){
-    let result = deleteBlog(req.query.id)
-      if(result){
-        SuccessModel.setUp('删除博客成功！')
-        return SuccessModel
-      }else{
-        ErrorModel.setUp('删除博客失败！')
-        return ErrorModel
+    req.body.author = 'zhangsan'
+    let result = deleteBlog(req.query.id ,req.body.author)
+    return result.then(
+      deleteResult=>{
+        if(deleteResult){
+          SuccessModel.setUp('删除博客成功！')
+          return SuccessModel
+        }else{
+          ErrorModel.setUp('删除博客失败！')
+          return ErrorModel
+        }
       }
+    )
 } 
 }
 

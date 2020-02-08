@@ -47,7 +47,7 @@ const updateBlog = (id, blogData = {}) => {
   `
   return dealQuery(sql).then(
     updateResult => {
-      if(updateResult.changedRows===1){
+      if(updateResult.affectedRows > 0){
         return true
       }else{
         return false
@@ -56,8 +56,15 @@ const updateBlog = (id, blogData = {}) => {
   )
 }
 
-const deleteBlog = (id) => {
-  return true
+const deleteBlog = (id, author) => {
+  let sql = `delete from blogs where id='${id}' and author='${author}' `
+  return dealQuery(sql).then(deleteResult => {
+    if(deleteResult.affectedRows > 0){
+      return true
+    }else{
+      return false
+    }
+  })
 }
 module.exports= {
   getList,
