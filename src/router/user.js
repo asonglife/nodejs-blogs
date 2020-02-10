@@ -2,7 +2,7 @@ const {registerCheck} = require('../controller/user')
 
 const {SuccessModel, ErrorModel} = require('../model/baseModel')
 
-
+const {set} = require('../db/redis')
 const handleUserRouter = (req, res) => {
   const method = req.method
   if(method === 'GET' && req.path === '/api/user/login'){
@@ -12,6 +12,7 @@ const handleUserRouter = (req, res) => {
       if(registerResult){
       req.session.realname = registerResult.realname
       req.session.username = registerResult.username
+      set(req.sessionId.userId, req.session)
       console.log(req.session)
       SuccessModel.setUp('登录成功')
       return SuccessModel

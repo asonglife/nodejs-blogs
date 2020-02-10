@@ -1,7 +1,8 @@
 const handleUserRouter = require('./src/router/user')
 const handleBlogRouter = require('./src/router/blog')
 const querystring = require ('querystring')
-let SESSION_DATA = {}
+const {get, set} = require('./src/db/redis')
+// let SESSION_DATA = {}
 const getExpireTime= () => {
   let date = new Date()
   date.setTime(date.getTime()+24*60*60*1000)
@@ -37,6 +38,7 @@ const handlerFunc = (req, res) => {
   req.path = url.split('?')[0];
   req.query = querystring.parse(url.split('?')[1])
   req.cookie = {}
+  res.setHeader('content-type','application/json')
   let cookieStr = req.headers.cookie || ''
   cookieStr.split(';').forEach(item => {
     if(!item){
@@ -46,21 +48,40 @@ const handlerFunc = (req, res) => {
     let value = item.split('=')[1].trim()
     req.cookie[key]=value
   })
-  let userId = req.cookie.userid
+  //使用普通进程内存储存session
+  // let userId = req.cookie.userid
+  // let needSetCookie = false
+  // if(userId){
+  //   if(!SESSION_DATA[userId]){
+  //     SESSION_DATA[userId]={}
+  //   } 
+  // }else{
+  //   userId=`${Date.now()}_${Math.random()}`
+  //   SESSION_DATA[userId]={}
+  //   needSetCookie = true
+  // }
+  // req.session=SESSION_DATA[userId]
+  // console.log('session',SESSION_DATA[userId])
+  //
+  //使用redis来储存session
   let needSetCookie = false
-  if(userId){
-    if(!SESSION_DATA[userId]){
-      SESSION_DATA[userId]={}
-    } 
-  }else{
-    userId=`${Date.now()}_${Math.random()}`
-    SESSION_DATA[userId]={}
+  let userId = req.cookie.userId
+  if(!userId){
     needSetCookie = true
+    userId = `${Date.now()}_${Math.random()}`
+    req.sessionId = {}
   }
-  req.session=SESSION_DATA[userId]
-  console.log('session',SESSION_DATA[userId])
-  res.setHeader('content-type','application/json')
-  getPostData(req).then(postdata => {
+  req.session = req.sessionId
+  req.sessionId.userId = userId
+  // set(req.session.userId, req.session)
+  get(req.sessionId.userId).then(redisData => {
+    if(redisData === null){
+      set(req.sessionId.userId, {})
+    }
+    set(req.sessionId.userId, redisData)
+    console.log(redisData)
+    return getPostData(req)
+  }).then(postdata => {
     req.body = postdata
     const blogResult = handleBlogRouter(req, res)
     if(blogResult){
