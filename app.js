@@ -69,32 +69,30 @@ const handlerFunc = (req, res) => {
   if(!userId){
     needSetCookie = true
     userId = `${Date.now()}_${Math.random()}`
-    req.sessionId = {}
+    set(userId,{})
   }
-  req.session = req.sessionId
-  req.sessionId.userId = userId
-  // set(req.session.userId, req.session)
-  get(req.sessionId.userId).then(redisData => {
+  req.sessionId = userId
+  get(req.sessionId).then(redisData => {
     if(redisData === null){
-      set(req.sessionId.userId, {})
+      set(req.sessionId, {})
+      req.session={}
+    }else{
+    req.session=redisData
     }
-    set(req.sessionId.userId, redisData)
-    console.log(redisData)
     return getPostData(req)
   }).then(postdata => {
     req.body = postdata
     const blogResult = handleBlogRouter(req, res)
-    if(blogResult){
-    blogResult.then(blogData => {
-      if(needSetCookie){
-        res.setHeader('Set-Cookie',`userid=${userId};path=/;httpOnly;expires=${getExpireTime()}`)
-      }
-       res.end(
-       JSON.stringify(blogData)
-      )
-    })
-  }
-   
+      if(blogResult){
+      blogResult.then(blogData => {
+        if(needSetCookie){
+          res.setHeader('Set-Cookie',`userid=${userId};path=/;httpOnly;expires=${getExpireTime()}`)
+        }
+        res.end(
+        JSON.stringify(blogData)
+        )
+      })
+    }   
     const userResult = handleUserRouter(req, res)
     if(userResult){
      userResult.then(userData => {
@@ -107,7 +105,7 @@ const handlerFunc = (req, res) => {
           
     }) 
     }
-    
+
     
   })
 }
