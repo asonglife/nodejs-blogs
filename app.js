@@ -2,6 +2,7 @@ const handleUserRouter = require('./src/router/user')
 const handleBlogRouter = require('./src/router/blog')
 const querystring = require ('querystring')
 const {get, set} = require('./src/db/redis')
+const HandleLog  = require('./src/utils/log')
 // let SESSION_DATA = {}
 const getExpireTime= () => {
   let date = new Date()
@@ -34,6 +35,7 @@ const getPostData = (req) => {
 }
 
 const handlerFunc = (req, res) => {
+  HandleLog.access(`${req.url}--${req.headers}--${Date.now()}`)
   const url = req.url;
   req.path = url.split('?')[0];
   req.query = querystring.parse(url.split('?')[1])
@@ -63,9 +65,9 @@ const handlerFunc = (req, res) => {
   // req.session=SESSION_DATA[userId]
   // console.log('session',SESSION_DATA[userId])
   //
-  //使用redis来储存session
+  // 使用redis来储存session
   let needSetCookie = false
-  let userId = req.cookie.userId
+  let userId = req.cookie.userid
   if(!userId){
     needSetCookie = true
     userId = `${Date.now()}_${Math.random()}`
@@ -73,14 +75,15 @@ const handlerFunc = (req, res) => {
   }
   req.sessionId = userId
   get(req.sessionId).then(redisData => {
-    if(redisData === null){
+    if(redisData == null){
       set(req.sessionId, {})
       req.session={}
     }else{
     req.session=redisData
     }
     return getPostData(req)
-  }).then(postdata => {
+  })
+  .then(postdata => {
     req.body = postdata
     const blogResult = handleBlogRouter(req, res)
       if(blogResult){
